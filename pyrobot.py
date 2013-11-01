@@ -41,50 +41,55 @@ SerialCommandInterface class is also used for OI.
 __author__ = "damonkohler@gmail.com (Damon Kohler)"
 
 import logging
-import math
 import serial
 import struct
 import time
 import threading
 import traceback
 
-ROOMBA_OPCODES = dict(
-    start = 128,
-    baud = 129,
-    control = 130,
-    safe = 131,
-    full = 132,
-    power = 133,
-    spot = 134,
-    clean = 135,
-    max = 136,
-    drive = 137,
-    motors = 138,
-    leds = 139,
-    song = 140,
-    play = 141,
-    sensors = 142,
-    force_seeking_dock = 143,
-    )
+# python2/3 support
+try:
+    range = xrange
+except NameError:
+    pass
 
-CREATE_OPCODES = dict(
-    soft_reset = 7,  # Where is this documented?
-    low_side_drivers = 138,
-    pwm_low_side_drivers = 144,
-    direct_drive = 145,
-    digital_outputs = 147,
-    stream = 148,
-    query_list = 149,
-    pause_resume_stream = 150,
-    send_ir = 151,
-    script = 152,
-    play_script = 153,
-    show_script = 154,
-    wait_time = 155,
-    wait_distance = 156,
-    wait_angle = 157,
-    wait_event = 158,
-    )
+ROOMBA_OPCODES = {
+    'start': 128,
+    'baud': 129,
+    'control': 130,
+    'safe': 131,
+    'full': 132,
+    'power': 133,
+    'spot': 134,
+    'clean': 135,
+    'max': 136,
+    'drive': 137,
+    'motors': 138,
+    'leds': 139,
+    'song': 140,
+    'play': 141,
+    'sensors': 142,
+    'force_seeking_dock': 143,
+}
+
+CREATE_OPCODES = {
+    'soft_reset': 7,  # Where is this documented?
+    'low_side_drivers': 138,
+    'pwm_low_side_drivers': 144,
+    'direct_drive': 145,
+    'digital_outputs': 147,
+    'stream': 148,
+    'query_list': 149,
+    'pause_resume_stream': 150,
+    'send_ir': 151,
+    'script': 152,
+    'play_script': 153,
+    'show_script': 154,
+    'wait_time': 155,
+    'wait_distance': 156,
+    'wait_angle': 157,
+    'wait_event': 158,
+}
 
 REMOTE_OPCODES = {
     # Remote control.
@@ -95,8 +100,7 @@ REMOTE_OPCODES = {
     133: 'max',
     134: 'small',
     135: 'medium',
-    136: 'large',
-    136: 'clean',
+    136: 'large/clean',
     137: 'pause',
     138: 'power',
     139: 'arc-left',
@@ -148,48 +152,50 @@ OI_MODES = (
 SENSOR_GROUP_PACKET_LENGTHS = (26, 10, 6, 10, 14, 12, 52)
 
 # From: http://www.harmony-central.com/MIDI/Doc/table2.html
-MIDI_TABLE = {'rest': 0, 'R': 0, 'pause': 0,
-              'G1': 31, 'G#1': 32, 'A1': 33,
-              'A#1': 34, 'B1': 35,
+MIDI_TABLE = {
+    'rest': 0, 'R': 0, 'pause': 0,
+    'G1': 31, 'G#1': 32, 'A1': 33,
+    'A#1': 34, 'B1': 35,
 
-              'C2': 36, 'C#2': 37, 'D2': 38,
-              'D#2': 39, 'E2': 40, 'F2': 41,
-              'F#2': 42, 'G2': 43, 'G#2': 44,
-              'A2': 45, 'A#2': 46, 'B2': 47,
+    'C2': 36, 'C#2': 37, 'D2': 38,
+    'D#2': 39, 'E2': 40, 'F2': 41,
+    'F#2': 42, 'G2': 43, 'G#2': 44,
+    'A2': 45, 'A#2': 46, 'B2': 47,
 
-              'C3': 48, 'C#3': 49, 'D3': 50,
-              'D#3': 51, 'E3': 52, 'F3': 53,
-              'F#3': 54, 'G3': 55, 'G#3': 56,
-              'A3': 57, 'A#3': 58, 'B3': 59,
+    'C3': 48, 'C#3': 49, 'D3': 50,
+    'D#3': 51, 'E3': 52, 'F3': 53,
+    'F#3': 54, 'G3': 55, 'G#3': 56,
+    'A3': 57, 'A#3': 58, 'B3': 59,
 
-              'C4': 60, 'C#4': 61, 'D4': 62,
-              'D#4': 63, 'E4': 64, 'F4': 65,
-              'F#4': 66, 'G4': 67, 'G#4': 68,
-              'A4': 69, 'A#4': 70, 'B4': 71,
+    'C4': 60, 'C#4': 61, 'D4': 62,
+    'D#4': 63, 'E4': 64, 'F4': 65,
+    'F#4': 66, 'G4': 67, 'G#4': 68,
+    'A4': 69, 'A#4': 70, 'B4': 71,
 
-              'C5': 72, 'C#5': 73, 'D5': 74,
-              'D#5': 75, 'E5': 76, 'F5': 77,
-              'F#5': 78, 'G5': 79, 'G#5': 80,
-              'A5': 81, 'A#5': 82, 'B5': 83,
+    'C5': 72, 'C#5': 73, 'D5': 74,
+    'D#5': 75, 'E5': 76, 'F5': 77,
+    'F#5': 78, 'G5': 79, 'G#5': 80,
+    'A5': 81, 'A#5': 82, 'B5': 83,
 
-              'C6': 84, 'C#6': 85, 'D6': 86,
-              'D#6': 87, 'E6': 88, 'F6': 89,
-              'F#6': 90, 'G6': 91, 'G#6': 92,
-              'A6': 93, 'A#6': 94, 'B6': 95,
+    'C6': 84, 'C#6': 85, 'D6': 86,
+    'D#6': 87, 'E6': 88, 'F6': 89,
+    'F#6': 90, 'G6': 91, 'G#6': 92,
+    'A6': 93, 'A#6': 94, 'B6': 95,
 
-              'C7': 96, 'C#7': 97, 'D7': 98,
-              'D#7': 99, 'E7': 100, 'F7': 101,
-              'F#7': 102, 'G7': 103, 'G#7': 104,
-              'A7': 105, 'A#7': 106, 'B7': 107,
+    'C7': 96, 'C#7': 97, 'D7': 98,
+    'D#7': 99, 'E7': 100, 'F7': 101,
+    'F#7': 102, 'G7': 103, 'G#7': 104,
+    'A7': 105, 'A#7': 106, 'B7': 107,
 
-              'C8': 108, 'C#8': 109, 'D8': 110,
-              'D#8': 111, 'E8': 112, 'F8': 113,
-              'F#8': 114, 'G8': 115, 'G#8': 116,
-              'A8': 117, 'A#8': 118, 'B8': 119,
+    'C8': 108, 'C#8': 109, 'D8': 110,
+    'D#8': 111, 'E8': 112, 'F8': 113,
+    'F#8': 114, 'G8': 115, 'G#8': 116,
+    'A8': 117, 'A#8': 118, 'B8': 119,
 
-              'C9': 120, 'C#9': 121, 'D9': 122,
-              'D#9': 123, 'E9': 124, 'F9': 125,
-              'F#9': 126, 'G9': 127}
+    'C9': 120, 'C#9': 121, 'D9': 122,
+    'D#9': 123, 'E9': 124, 'F9': 125,
+    'F#9': 126, 'G9': 127
+}
 
 # Drive constants.
 RADIUS_TURN_IN_PLACE_CW = -1
@@ -206,9 +212,7 @@ WHEEL_SEPARATION = 298  # mm
 SERIAL_TIMEOUT = 2  # Number of seconds to wait for reads. 2 is generous.
 START_DELAY = 5  # Time it takes the Roomba/Create to boot.
 
-
 assert struct.calcsize('H') == 2, 'Expecting 2-byte shorts.'
-
 
 class PyRobotError(Exception):
     pass
@@ -275,6 +279,59 @@ class SerialCommandInterface(object):
                 self.Send([self.opcodes[name]] + list(bytes))
             return SendOpcode
         raise AttributeError
+
+class BluetoothController(object):
+    """
+    """
+    def __init__(self, mac, port):
+        self.conn = None
+        self.opcodes = {}
+        self.lock = threading.RLock()
+
+    def Wake(self):
+        """Wake up robot."""
+        pass
+
+    def AddOpcodes(self, opcodes):
+        """Add available opcodes to the SCI."""
+        self.opcodes.update(opcodes)
+
+    def Send(self, bytes):
+        """Send a string of bytes to the robot."""
+        with self.lock:
+            self.conn.send(struct.pack('B' * len(bytes), *bytes))
+
+    def Read(self, num_bytes):
+        """Read a string of 'num_bytes' bytes from the robot."""
+        logging.debug('Attempting to read %d bytes from SCI port.' % num_bytes)
+        with self.lock:
+            data = self.conn.recv(num_bytes)
+        logging.debug('Read %d bytes from SCI port.' % len(data))
+        if not data:
+            raise PyRobotError('Error reading from SCI port. No data.')
+        if len(data) != num_bytes:
+            raise PyRobotError('Error reading from SCI port. Wrong data length.')
+        return data
+
+    def FlushInput(self):
+        """Flush input buffer, discarding all its contents."""
+        logging.debug('Flushing serial input buffer.')
+        self.ser.flushInput()
+
+    def __getattr__(self, name):
+        """Creates methods for opcodes on the fly.
+
+        Each opcode method sends the opcode optionally followed by a string of
+        bytes.
+
+        """
+        if name in self.opcodes:
+            def SendOpcode(*bytes):
+                logging.debug('Sending opcode %s.' % name)
+                self.Send([self.opcodes[name]] + list(bytes))
+            return SendOpcode
+        raise AttributeError
+        
 
 
 class RoombaSensors(object):
@@ -424,6 +481,7 @@ class RoombaSensors(object):
             'power': bool(byte & 0x08),
             'spot': bool(byte & 0x04),
             'clean': bool(byte & 0x02),
+
             'max': bool(byte & 0x01)})
 
     def DecodeBool(self, name, byte):
@@ -453,30 +511,30 @@ class Roomba(object):
 
     """Represents a Roomba robot."""
 
-    def __init__(self, tty='/dev/ttyUSB0'):
-        self.tty = tty
-        self.sci = SerialCommandInterface(tty, 57600)
+    def __init__(self, controller):
+        self.sci = controller
         self.sci.AddOpcodes(ROOMBA_OPCODES)
         self.sensors = RoombaSensors(self)
         self.safe = True
 
-    def ChangeBaudRate(self, baud_rate):
-        """Sets the baud rate in bits per second (bps) at which SCI commands and
-        data are sent according to the baud code sent in the data byte.
-
-        The default baud rate at power up is 57600 bps. (See Serial Port Settings,
-        above.) Once the baud rate is changed, it will persist until Roomba is
-        power cycled by removing the battery (or until the battery voltage falls
-        below the minimum required for processor operation). You must wait 100ms
-        after sending this command before sending additional commands at the new
-        baud rate. The SCI must be in passive, safe, or full mode to accept this
-        command. This command puts the SCI in passive mode.
-
-        """
-        if baud_rate not in BAUD_RATES:
-            raise PyRobotError('Invalid baud rate specified.')
-        self.sci.baud(baud_rate)
-        self.sci = SerialCommandInterface(self.tty, baud_rate)
+    # TODO move into controller
+    # def ChangeBaudRate(self, baud_rate):
+    #    """Sets the baud rate in bits per second (bps) at which SCI commands and
+    #    data are sent according to the baud code sent in the data byte.
+    #
+    #    The default baud rate at power up is 57600 bps. (See Serial Port Settings,
+    #    above.) Once the baud rate is changed, it will persist until Roomba is
+    #    power cycled by removing the battery (or until the battery voltage falls
+    #    below the minimum required for processor operation). You must wait 100ms
+    #    after sending this command before sending additional commands at the new
+    #    baud rate. The SCI must be in passive, safe, or full mode to accept this
+    #    command. This command puts the SCI in passive mode.
+    #
+    #    """
+    #    if baud_rate not in BAUD_RATES:
+    #        raise PyRobotError('Invalid baud rate specified.')
+    #    self.sci.baud(baud_rate)
+    #    self.sci = SerialCommandInterface(self.tty, baud_rate)
 
     def Passive(self):
         """Put the robot in passive mode."""
@@ -529,11 +587,11 @@ class Roomba(object):
 
     def SlowStop(self, velocity):
         """Slowly reduce the velocity to 0 to stop movement."""
-        velocities = xrange(velocity, VELOCITY_SLOW, -25)
+        velocities = range(velocity, VELOCITY_SLOW, -25)
         if velocity < 0:
-            velocities = xrange(velocity, -VELOCITY_SLOW, 25)
-        for v in velocities:
-            self.Drive(v, RADIUS_STRAIGHT)
+            velocities = range(velocity, -VELOCITY_SLOW, 25)
+        for velocity in velocities:
+            self.Drive(velocity, RADIUS_STRAIGHT)
             time.sleep(0.05)
         self.Stop()
 
@@ -560,27 +618,27 @@ class CreateSensors(RoombaSensors):
 
     """Handles retrieving and decoding the Create's sensor data."""
 
-    def RequestSensor(self, sensorID, length):
+    def RequestSensor(self, sensor_id, length):
         """Reqeust a sesnor packet."""
         with self.robot.sci.lock:
-            logging.debug('Requesting sensor value from %d.' % sensorID)
+            logging.debug('Requesting sensor value from %d.' % sensor_id)
             self.robot.sci.FlushInput()
-            self.robot.sci.sensors(sensorID)
+            self.robot.sci.sensors(sensor_id)
             data = self.robot.sci.Read(length)
             return data
 
     def GetDistance(self):
-        bytes = self.RequestSensor(19,2)
+        bytes = self.RequestSensor(19, 2)
         distance = struct.unpack('>h', bytes)[0]
         return distance
 
     def GetAngle(self):
-        bytes = self.RequestSensor(20,2)
+        bytes = self.RequestSensor(20, 2)
         angle = struct.unpack('>h', bytes)[0]
         return angle
 
     def GetBump(self):
-        bytes = self.RequestSensor(7,1)
+        bytes = self.RequestSensor(7, 1)
         bumps = struct.unpack('B', bytes)[0]
         if bool(bumps & 0x03) != 0:
             return True
@@ -588,42 +646,42 @@ class CreateSensors(RoombaSensors):
             return False
 
     def GetWall(self):
-        bytes = self.RequestSensor(27,2)
+        bytes = self.RequestSensor(27, 2)
         wall = struct.unpack('>H', bytes)[0]
         return wall
 
     def GetBatteryCharge(self):
-        bytes = self.RequestSensor(25,2)
+        bytes = self.RequestSensor(25, 2)
         charge = struct.unpack('>H', bytes)[0]
         return charge
 
     def GetAnalogInput(self):
-        bytes = self.RequestSensor(33,2)
+        bytes = self.RequestSensor(33, 2)
         analog_input = struct.unpack('>H', bytes)[0]
         return analog_input
 
-    def _DecodeGroupPacket6(self, bytes):
+    def _DecodeGroupPacket6(self, buff):
         """Decode sensor group packet 6."""
-        self.DecodeShort('left-velocity', bytes.pop(), bytes.pop())  # mm/s
-        self.DecodeShort('right-velocity', bytes.pop(), bytes.pop())  # mm/s
-        self.DecodeShort('radius', bytes.pop(), bytes.pop())  # mm
-        self.DecodeShort('velocity', bytes.pop(), bytes.pop())  # mm/s
-        self.DecodeUnsignedByte('number-of-stream-packets', bytes.pop())
-        self.DecodeBool('song-playing', bytes.pop())
-        self.DecodeUnsignedByte('song-number', bytes.pop())
-        self.DecodeUnsignedByte('oi-mode', bytes.pop())
+        self.DecodeShort('left-velocity', buff.pop(), buff.pop())  # mm/s
+        self.DecodeShort('right-velocity', buff.pop(), buff.pop())  # mm/s
+        self.DecodeShort('radius', buff.pop(), buff.pop())  # mm
+        self.DecodeShort('velocity', buff.pop(), buff.pop())  # mm/s
+        self.DecodeUnsignedByte('number-of-stream-packets', buff.pop())
+        self.DecodeBool('song-playing', buff.pop())
+        self.DecodeUnsignedByte('song-number', buff.pop())
+        self.DecodeUnsignedByte('oi-mode', buff.pop())
         self._MakeHumanReadable('oi-mode', OI_MODES)
-        self.DecodeUnsignedByte('charging-sources-available', bytes.pop())
-        self.DecodeUnsignedShort('user-analog-input', bytes.pop(), bytes.pop())
-        self.DecodeUnsignedByte('user-digital-inputs', bytes.pop())
-        self.DecodeUnsignedShort('cliff-right-signal', bytes.pop(), bytes.pop())
+        self.DecodeUnsignedByte('charging-sources-available', buff.pop())
+        self.DecodeUnsignedShort('user-analog-input', buff.pop(), buff.pop())
+        self.DecodeUnsignedByte('user-digital-inputs', buff.pop())
+        self.DecodeUnsignedShort('cliff-right-signal', buff.pop(), buff.pop())
         self.DecodeUnsignedShort(
-            'cliff-front-right-signal', bytes.pop(), bytes.pop())
+            'cliff-front-right-signal', buff.pop(), buff.pop())
         self.DecodeUnsignedShort(
-            'cliff-front-left-signal', bytes.pop(), bytes.pop())
-        self.DecodeUnsignedShort('cliff-left-signal', bytes.pop(), bytes.pop())
-        self.DecodeUnsignedShort('wall-signal', bytes.pop(), bytes.pop())
-        self._DecodeGroupPacket0(bytes)
+            'cliff-front-left-signal', buff.pop(), buff.pop())
+        self.DecodeUnsignedShort('cliff-left-signal', buff.pop(), buff.pop())
+        self.DecodeUnsignedShort('wall-signal', buff.pop(), buff.pop())
+        self._DecodeGroupPacket0(buff)
 
     def GetAll(self):
         """Request and decode all available sensor data."""
