@@ -43,6 +43,7 @@ __author__ = "damonkohler@gmail.com (Damon Kohler)"
 import logging
 import serial
 import struct
+import socket
 import time
 import threading
 import traceback
@@ -283,8 +284,13 @@ class SerialCommandInterface(object):
 class BluetoothController(object):
     """
     """
-    def __init__(self, mac, port):
-        self.conn = None
+    def __init__(self, mac, port=1):
+        try:
+            self.conn = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM,
+                                      socket.BTPROTO_RFCOMM)
+            self.conn.connect((mac, port))
+        except ConnectionResetError:
+            raise PyRobotError('Failed to connect via bluetooth')
         self.opcodes = {}
         self.lock = threading.RLock()
 
@@ -694,8 +700,8 @@ class Create(Roomba):
 
     """Represents a Create robot."""
 
-    def __init__(self, tty='/dev/ttyUSB0'):
-        super(Create, self).__init__(tty)
+    def __init__(self, controller):
+        Roomba.__init__(self, controller)
         self.sci.AddOpcodes(CREATE_OPCODES)
         self.sensors = CreateSensors(self)
 
