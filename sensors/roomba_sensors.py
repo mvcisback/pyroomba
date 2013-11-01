@@ -46,7 +46,7 @@ SENSOR_GROUP_PACKET_LENGTHS = (26, 10, 6, 10, 14, 12, 52)
 class RoombaSensorError(Exception):
     pass
 
-class RoombaSensors(object):
+class RoombaSensors(dict):
 
     """Retrive and decode the Roomba's sensor data.
 
@@ -55,25 +55,18 @@ class RoombaSensors(object):
 
     """
     def __init__(self, robot):
+        dict.__init__(self)
         self.robot = robot
         self.data = {}  # Last sensor readings.
 
     def Clear(self):
         """Clear out old sensor data."""
-        self.data = {}
-
-    def __getitem__(self, name):
-        """Indexes into sensor data."""
-        return self.data[name]
-
-    def __contains__(self, name):
-        """Indexes into sensor data."""
-        return name in self.data
+        self.clear()
 
     def _MakeHumanReadable(self, sensor, mapping):
         """Change a sensor value to it's human readable form."""
         try:
-            self.data[sensor] = mapping[self.data[sensor]]
+            self[sensor] = mapping[self[sensor]]
         except (KeyError, IndexError):
             logging.debug(traceback.format_exc())
             raise RoombaSensorError('Invalid sensor data.')
@@ -147,9 +140,9 @@ class RoombaSensors(object):
             raise RoombaSensorError('Invalid angle unit specified.')
         self.DecodeShort('angle', low, high)
         if unit == 'radians':
-            self.data['angle'] = (2 * self.data['angle']) / 258
+            self['angle'] = (2 * self['angle']) / 258
         if unit == 'degrees':
-            self.data['angle'] #/= math.pi
+            self['angle'] #/= math.pi
 
     def BumpsWheeldrops(self, byte):
         """The state of the bump (0 = no bump, 1 = bump) and wheeldrop sensors
@@ -163,7 +156,7 @@ class RoombaSensors(object):
 
         """
         byte = struct.unpack('B', byte)[0]
-        self.data.update({
+        self.update({
             'wheel-drop-caster': bool(byte & 0x10),
             'wheel-drop-left': bool(byte & 0x08),
             'wheel-drop-right': bool(byte & 0x04),
@@ -176,7 +169,7 @@ class RoombaSensors(object):
 
         """
         byte = struct.unpack('B', byte)[0]
-        self.data.update({
+        self.update({
             'drive-left': bool(byte & 0x10),
             'drive-right': bool(byte & 0x08),
             'main-brush': bool(byte & 0x04),
@@ -189,7 +182,7 @@ class RoombaSensors(object):
 
         """
         byte = struct.unpack('B', byte)[0]
-        self.data.update({
+        self.update({
             'power': bool(byte & 0x08),
             'spot': bool(byte & 0x04),
             'clean': bool(byte & 0x02),
@@ -198,22 +191,22 @@ class RoombaSensors(object):
 
     def DecodeBool(self, name, byte):
         """Decode 'byte' as a bool and map it to 'name'."""
-        self.data[name] = bool(struct.unpack('B', byte)[0])
+        self[name] = bool(struct.unpack('B', byte)[0])
 
     # NOTE(damonkohler): We specify the low byte first to make it easier when
     # popping bytes off a list.
     def DecodeUnsignedShort(self, name, low, high):
         """Map an unsigned short from a 'high' and 'low' bytes to 'name'."""
-        self.data[name] = struct.unpack('>H', high + low)[0]
+        self[name] = struct.unpack('>H', high + low)[0]
 
     def DecodeShort(self, name, low, high):
         """Map a short from a 'high' and 'low' bytes to 'name'."""
-        self.data[name] = struct.unpack('>h', high + low)[0]
+        self[name] = struct.unpack('>h', high + low)[0]
 
     def DecodeByte(self, name, byte):
         """Map signed 'byte' to 'name'."""
-        self.data[name] = struct.unpack('b', byte)[0]
+        self[name] = struct.unpack('b', byte)[0]
 
     def DecodeUnsignedByte(self, name, byte):
         """Map unsigned 'byte' to 'name'."""
-        self.data[name] = struct.unpack('B', byte)[0]
+        self[name] = struct.unpack('B', byte)[0]

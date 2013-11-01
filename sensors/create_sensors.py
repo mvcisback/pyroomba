@@ -13,7 +13,7 @@ def _get_sensor(sensor, size, byte_t):
         @wraps(func)
         def ___get_sensor(self):
             data = struct.unpack(byte_t, self.RequestSensor(sensor, size))[0]
-            return func(data)
+            return func(self, data)
         return ___get_sensor
     return __get_sensor
 
@@ -30,27 +30,27 @@ class CreateSensors(RoombaSensors):
             return data
 
     @_get_sensor(19, 2, '>h')
-    def GetDistance(dist):
+    def GetDistance(self, dist):
         return dist
 
     @_get_sensor(20, 2, '>h')
-    def GetAngle(angle):
+    def GetAngle(self, angle):
         return angle
 
     @_get_sensor(7, 1, 'B')
-    def GetBump(bumps):
-        return bool(bumps & 0x03) != 0:
+    def GetBump(self, bumps):
+        return bool(bumps & 0x03)
 
     @_get_sensor(27, 2, '>H')
-    def GetWall(wall):
+    def GetWall(self, wall):
         return wall
 
     @_get_sensor(25, 2, '>H')
-    def GetBatteryCharge(charge):
+    def GetBatteryCharge(self, charge):
         return charge
 
     @_get_sensor(33, 2, '>H')
-    def GetAnalogInput(analog_in):
+    def GetAnalogInput(self, analog_in):
         return analog_in
 
     def _DecodeGroupPacket6(self, buff):
