@@ -12,7 +12,7 @@ class BluetoothController(Controller):
             self.conn.connect((mac, port))
         except socket.error.ConnectionResetError:
             raise PyRobotControllerError('Failed to connect via bluetooth')
-            
+
         self._recv = self.conn.recv
         self._send = self.conn.send
 

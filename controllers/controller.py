@@ -1,3 +1,7 @@
+import struct
+import threading
+import logging
+
 class PyRobotControllerError(Exception):
     pass
 
