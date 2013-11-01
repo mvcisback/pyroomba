@@ -2,6 +2,7 @@ import logging
 import time
 
 from .roomba import Roomba, RoombaError
+from ..sensors.create_sensors import CreateSensors
 
 CREATE_OPCODES = {
     'soft_reset': 7,  # Where is this documented?

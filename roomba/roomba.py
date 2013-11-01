@@ -1,6 +1,8 @@
 import time
 import struct
 
+from ..sensors.roomba_sensors import RoombaSensors
+
 ROOMBA_OPCODES = {
     'start': 128,
     'baud': 129,
