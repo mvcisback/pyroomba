@@ -41,7 +41,6 @@ SerialCommandInterface class is also used for OI.
 __author__ = "damonkohler@gmail.com (Damon Kohler)"
 
 import logging
-import serial
 import struct
 import socket
 import time
@@ -210,7 +209,6 @@ VELOCITY_FAST = int(VELOCITY_MAX * 0.66)
 
 WHEEL_SEPARATION = 298  # mm
 
-SERIAL_TIMEOUT = 2  # Number of seconds to wait for reads. 2 is generous.
 START_DELAY = 5  # Time it takes the Roomba/Create to boot.
 
 assert struct.calcsize('H') == 2, 'Expecting 2-byte shorts.'
@@ -433,6 +431,7 @@ class Roomba(object):
             self.sci.full()
         time.sleep(0.5)
 
+    # TODO: Should check if currently in the correct mode
     def Drive(self, velocity, radius):
         """Controls Roomba's drive wheels.
 
@@ -598,7 +597,6 @@ class Create(Roomba):
 
         'drivers' should be a list of booleans indicating which low side drivers
         should be powered.
-
         """
         if len(drivers) != 3:
             raise PyRobotError('Expecting 3 low side driver power settings.')
@@ -612,6 +610,7 @@ class Create(Roomba):
         time.sleep(START_DELAY)
         self.Passive()
 
+    # I think this is broken in the original
     def LedControl(self, leds):
         """Turn or or off Advance or Play leds.
 
