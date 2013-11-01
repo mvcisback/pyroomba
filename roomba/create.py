@@ -68,7 +68,6 @@ class Create(Roomba):
 
         'leds' should be a list of booleans indicating which led
         should be powered, in this sequence: Advance, Play, Power
-
         """
         fst_byte = (2 ** 3) * int(leds[0])
         fst_byte += 2 * int(leds[1])
