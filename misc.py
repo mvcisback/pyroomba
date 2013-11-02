@@ -1,18 +1,3 @@
-BAUD_RATES = (  # In bits per second.
-    300,
-    600,
-    1200,
-    2400,
-    4800,
-    9600,
-    14400,
-    19200,
-    28800,
-    38400,
-    57600,  # Default.
-    115200)
-
-
 # From: http://www.harmony-central.com/MIDI/Doc/table2.html
 MIDI_TABLE = {
     'rest': 0, 'R': 0, 'pause': 0,

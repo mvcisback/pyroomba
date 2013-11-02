@@ -82,6 +82,20 @@ class BluetoothController(Controller):
         pass
 
 SERIAL_TIMEOUT = 2  # Number of seconds to wait for reads. 2 is generous.
+BAUD_RATES = (  # In bits per second.
+    300,
+    600,
+    1200,
+    2400,
+    4800,
+    9600,
+    14400,
+    19200,
+    28800,
+    38400,
+    57600,  # Default.
+    115200)
+
 
 class SerialController(Controller):
     """A higher-level wrapper around PySerial specifically designed for use with
@@ -90,6 +104,7 @@ class SerialController(Controller):
         Controller.__init__(self)
         self.ser = serial.Serial(tty, baudrate=baudrate, timeout=SERIAL_TIMEOUT)
         self.ser.open()
+        self.tty = tty
 
     def _send(self, msg):
         return self.ser.write(msg)
@@ -108,3 +123,25 @@ class SerialController(Controller):
         """Flush input buffer, discarding all its contents."""
         logging.debug('Flushing serial input buffer.')
         self.ser.flushInput()
+
+    @property
+    def baudrate(self):
+        """Returns baudrate of the serial port"""
+        return self.ser.baudrate
+
+    @baudrate.setter
+    def _(self, baudrate):
+        """Sets the baud rate in bits per second (bps) at which SCI commands and
+        data are sent according to the baud code sent in the data byte.
+
+        The default baud rate at power up is 57600 bps. (See Serial Port
+        Settings, above.) Once the baud rate is changed, it will persist until
+        Roomba is power cycled by removing the battery (or until the battery
+        voltage falls below the minimum required for processor operation).
+        You must wait 100ms after sending this command before sending additional
+        commands at the new baud rate. The SCI must be in passive, safe, or full
+        mode to accept this command. This command puts the SCI in passive mode.
+        """
+        if baudrate not in BAUD_RATES:
+            raise PyRobotControllerError('Invalid baud rate specified.')
+        self.ser.baudrate = baudrate
