@@ -57,6 +57,21 @@ class Controller(object):
         """Flush input buffer, discarding all its contents."""
         raise NotImplementedError()
 
+    def __getattr__(self, name):
+        """Creates methods for opcodes on the fly.
+
+        Each opcode method sends the opcode optionally followed by a string of
+        bytes.
+
+        """
+        if name in self.opcodes:
+            def send_opcode(*byte_str):
+                logging.debug('Sending opcode %s.' % name)
+                self.send([self.opcodes[name]] + list(byte_str))
+            return send_opcode
+        raise AttributeError
+        
+
 class BluetoothController(Controller):
     """"A higher-level wrapper around Bluetooth sockets specifically designed
     for use with iRobot's SCI."""
