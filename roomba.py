@@ -5,8 +5,8 @@ import logging
 import time
 import struct
 
-from ..sensors.roomba_sensors import RoombaSensors
-from ..sensors.create_sensors import CreateSensors
+from .sensors.roomba_sensors import RoombaSensors
+from .sensors.create_sensors import CreateSensors
 
 ROOMBA_OPCODES = {
     'start': 128,
@@ -48,7 +48,7 @@ class Roomba(object):
 
     def __init__(self, controller):
         self.sci = controller
-        self.sci.AddOpcodes(ROOMBA_OPCODES)
+        self.sci.add_opcodes(ROOMBA_OPCODES)
         self.sensors = RoombaSensors(self)
         self.safe = True
 
@@ -157,7 +157,7 @@ class Create(Roomba):
 
     def __init__(self, controller):
         Roomba.__init__(self, controller)
-        self.sci.AddOpcodes(CREATE_OPCODES)
+        self.sci.add_opcodes(CREATE_OPCODES)
         self.sensors = CreateSensors(self)
 
     def control(self):
