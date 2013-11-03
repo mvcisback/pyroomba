@@ -88,7 +88,6 @@ class Roomba(object):
         velocity makes Roomba drive backward.
 
         Also see DriveStraight and TurnInPlace convenience methods.
-
         """
         # Mask integers to 2 bytes.
         velocity = int(velocity) & 0xffff

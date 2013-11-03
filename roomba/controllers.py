@@ -61,9 +61,7 @@ class Controller(object):
         """Creates methods for opcodes on the fly.
 
         Each opcode method sends the opcode optionally followed by a string of
-        bytes.
-
-        """
+        bytes."""
         if name in self.opcodes:
             def send_opcode(*byte_str):
                 logging.debug('Sending opcode %s.' % name)
