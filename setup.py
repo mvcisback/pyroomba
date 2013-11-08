@@ -4,12 +4,11 @@ from setuptools import setup, find_packages
 setup(
     name='PyRoomba',
     version='0.1.0',
-    author='Marcell Vazquez-Chanlatte, Damon Kohler',
-    author_email='damonkohler@gmail.com',
+    author='Marcell Vazquez-Chanlatte',
     packages=find_packages(),
     url='',
-    license='LICENSE.txt',
+    license='LICENSE',
     description='',
-    long_description=open('README').read(),
+    long_description=open('README.md').read(),
     requires = ['amqp', 'pyserial'],
 )
