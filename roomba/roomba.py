@@ -5,6 +5,8 @@ import logging
 import time
 import struct
 
+from math import floor
+
 from .sensors.roomba_sensors import RoombaSensors
 from .sensors.create_sensors import CreateSensors
 
@@ -34,8 +36,8 @@ RADIUS_STRAIGHT = 32768
 RADIUS_MAX = 2000
 
 VELOCITY_MAX = 500  # mm/s
-VELOCITY_SLOW = int(VELOCITY_MAX * 0.33)
-VELOCITY_FAST = int(VELOCITY_MAX * 0.66)
+VELOCITY_SLOW = floor(VELOCITY_MAX * 0.33)
+VELOCITY_FAST = floor(VELOCITY_MAX * 0.66)
 
 WHEEL_SEPARATION = 298  # mm
 
